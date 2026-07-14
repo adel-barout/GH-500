@@ -1,0 +1,37 @@
+name: Generate npm lockfile
+
+# Draai dit handmatig via de "Actions" tab in GitHub,
+# of automatisch bij elke push die package.json wijzigt.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    paths:
+      - 'dependabot/npm-test/package.json'
+
+permissions:
+  contents: write
+
+jobs:
+  generate-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Genereer package-lock.json
+        working-directory: dependabot/npm-test
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Commit en push lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dependabot/npm-test/package-lock.json
+          git diff --cached --quiet || git commit -m "chore: genereer package-lock.json voor dependency graph"
+          git push
